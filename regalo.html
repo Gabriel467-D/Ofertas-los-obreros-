@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raspá tu regalo sorpresa · Los Obreros 2.0</title>
+<style>
+:root{--bg:#0A0A0F;--card:#15151d;--red:#E8183C;--yellow:#FFD21F;--txt:#F4F1EA;--mut:#a9a9b5;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--txt);font-family:Arial,Helvetica,sans-serif;text-align:center;overflow-x:hidden}
+.wrap{max-width:480px;margin:0 auto;padding:26px 20px 40px}
+.brand{font-weight:800;letter-spacing:3px;font-size:14px;color:var(--mut)}
+h1{font-size:32px;line-height:1.1;margin:14px 0 6px}
+.sub{color:var(--mut);margin:0 0 20px;font-size:17px}
+.scard{position:relative;width:100%;aspect-ratio:640/300;border:4px solid var(--red);border-radius:22px;overflow:hidden;background:var(--card);box-shadow:0 0 26px rgba(232,24,60,.5)}
+.under{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.under small{color:var(--mut);font-size:14px;letter-spacing:2px;font-weight:700}
+.under b{color:var(--yellow);font-size:56px;line-height:1.1;margin-top:4px}
+#sc{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:pointer;transition:opacity .5s}
+.done #sc{opacity:0;pointer-events:none}
+#skip{background:none;border:0;color:var(--mut);text-decoration:underline;font-size:15px;margin-top:14px;padding:8px}
+.done #skip{display:none}
+#after{display:none}
+.done #after{display:block;animation:pop .6s ease both}
+@keyframes pop{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.steps{text-align:left;margin:24px 0 20px;display:flex;flex-direction:column;gap:14px}
+.step{display:flex;gap:14px;align-items:center;font-size:19px;font-weight:700;line-height:1.25}
+.step i{flex:none;width:40px;height:40px;border-radius:50%;background:var(--yellow);color:#0A0A0F;font-style:normal;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:22px}
+.ig{display:block;background:var(--red);color:#fff;text-decoration:none;font-weight:800;font-size:20px;padding:16px;border-radius:40px}
+.note{color:var(--mut);font-size:15px;margin-top:16px}
+.conf{position:fixed;top:-20px;width:10px;height:16px;z-index:5;animation:fall linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.9}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="brand">LOS OBREROS 2.0</div>
+  <h1 id="ttl">Raspá y descubrí tu regalo</h1>
+  <p class="sub" id="sub">Pasá el dedo sobre el dorado</p>
+  <div class="scard">
+    <div class="under"><small>TU REGALO DE HOY</small><b id="regalo">PICNIC</b></div>
+    <canvas id="sc" width="640" height="300"></canvas>
+  </div>
+  <button id="skip" type="button">No me deja raspar, mostrar regalo</button>
+  <div id="after">
+    <div class="steps">
+      <div class="step"><i>1</i><span>Seguinos en Instagram</span></div>
+      <div class="step"><i>2</i><span>Subí una historia de tu compra y etiquetanos @losobrerosok</span></div>
+      <div class="step"><i>3</i><span>Mostrala en caja y retirá tu regalo</span></div>
+    </div>
+    <a class="ig" href="https://www.instagram.com/losobrerosok/" target="_blank" rel="noopener">Ir al Instagram @losobrerosok</a>
+    <p class="note">Av. Rogelio Nores Martínez 3296, B° Jardín</p>
+  </div>
+</div>
+<script>
+// Regalo sorpresa de hoy: cambiá solo esta palabra
+var REGALO_HOY = "PICNIC";
+document.getElementById("regalo").textContent = REGALO_HOY;
+var cv = document.getElementById("sc"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+var app = document.getElementById("app"), finished = false, drawing = false, last = null, moves = 0;
+(function paint() {
+  var g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#B8860B"); g.addColorStop(.35, "#FFE27A"); g.addColorStop(.6, "#C9A227"); g.addColorStop(1, "#F6D365");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(255,255,255,.2)"; ctx.lineWidth = 3;
+  for (var x = -H; x < W; x += 36) { ctx.beginPath(); ctx.moveTo(x, H); ctx.lineTo(x + H, 0); ctx.stroke(); }
+  ctx.fillStyle = "rgba(90,55,0,.65)"; ctx.font = "900 64px Arial,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("RASPÁ ACÁ", W / 2, H / 2);
+  ctx.globalCompositeOperation = "destination-out"; ctx.strokeStyle = "#000"; ctx.lineWidth = 64; ctx.lineCap = "round"; ctx.lineJoin = "round";
+})();
+function pos(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+function cleared() {
+  var d = ctx.getImageData(0, 0, W, H).data, n = 0, t = 0;
+  for (var i = 3; i < d.length; i += 4 * 40) { t++; if (d[i] < 40) n++; }
+  return n / t;
+}
+function reveal() {
+  if (finished) return; finished = true;
+  app.classList.add("done");
+  document.getElementById("ttl").textContent = "¡Te tocó!";
+  document.getElementById("sub").textContent = "Seguí estos pasos para retirarlo";
+  try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+  var colors = ["#E8183C", "#FFD21F", "#F4F1EA"];
+  for (var i = 0; i < 40; i++) {
+    var c = document.createElement("div"); c.className = "conf";
+    c.style.left = Math.random() * 100 + "vw"; c.style.background = colors[i % 3];
+    c.style.animationDuration = 1.8 + Math.random() * 1.6 + "s"; c.style.animationDelay = Math.random() * 0.4 + "s";
+    document.body.appendChild(c);
+    (function (el) { setTimeout(function () { el.remove(); }, 4200); })(c);
+  }
+}
+cv.addEventListener("pointerdown", function (e) {
+  if (finished) return; drawing = true; last = pos(e);
+  try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+  ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(last.x + .1, last.y); ctx.stroke();
+});
+cv.addEventListener("pointermove", function (e) {
+  if (!drawing || finished) return;
+  var p = pos(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
+  if (++moves % 8 === 0 && cleared() > 0.5) reveal();
+});
+function up() { drawing = false; if (!finished && cleared() > 0.5) reveal(); }
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+document.getElementById("skip").addEventListener("click", reveal);
+</script>
+</body>
+</html>
